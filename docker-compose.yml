@@ -1,0 +1,26 @@
+version: '3'
+
+services:
+  facade:
+    build: ./facade
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./facade/.env
+    depends_on:
+      - messages
+      - logging
+
+  messages:
+    build: ./messages
+    ports:
+      - "8001:8000"
+    env_file:
+      - ./messages/.env
+
+  logging:
+    build: ./logging
+    ports:
+      - "8002:8000"
+    env_file:
+      - ./logging/.env
