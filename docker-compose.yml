@@ -1,0 +1,59 @@
+version: "3"
+
+services:
+  hazelcast-node-1:
+    image: hazelcast/hazelcast
+    container_name: lab-node-1
+    volumes:
+    - ./config.yml:/opt/hazelcast/config.yml
+    environment:
+      - HZ_CLUSTERNAME=lab-hazelcast
+      - HAZELCAST_CONFIG=config.yml
+    ports:
+      - "5701:5701"
+    networks:
+      - hazelcast-net
+
+  hazelcast-node-2:
+    image: hazelcast/hazelcast
+    container_name: lab-node-2
+    volumes:
+    - ./config.yml:/opt/hazelcast/config.yml
+    environment:
+      - HZ_CLUSTERNAME=lab-hazelcast
+      - HAZELCAST_CONFIG=config.yml
+    ports:
+      - "5702:5701"
+    networks:
+      - hazelcast-net
+
+  hazelcast-node-3:
+    image: hazelcast/hazelcast
+    container_name: lab-node-3
+    volumes:
+    - ./config.yml:/opt/hazelcast/config.yml
+    environment:
+      - HZ_CLUSTERNAME=lab-hazelcast
+      - HAZELCAST_CONFIG=config.yml
+    ports:
+      - "5703:5701"
+    networks:
+      - hazelcast-net
+
+  hazelcast-management-center:
+    image: hazelcast/management-center
+    container_name: hazelcast-management-center
+    volumes:
+      - ./config.yml:/opt/hazelcast/config.yml
+    environment:
+      - MC_CLUSTER_MEMBERS=hazelcast-node-1:5701,hazelcast-node-2:5701,hazelcast-node-3:5701
+      - HZ_CLUSTERNAME=lab-hazelcast
+      - HAZELCAST_CONFIG=config.yml
+    ports:
+      - "8080:8080"
+    networks:
+      - hazelcast-net
+
+networks:
+  hazelcast-net:
+    name: hazelcast-network
