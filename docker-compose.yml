@@ -9,7 +9,15 @@ services:
       - ./facade/.env
     depends_on:
       - messages
-      - logging
+      - logging1
+      - logging2
+      - logging3
+    links:
+      - logging1
+      - logging2
+      - logging3
+    networks:
+      - hazelcast-net
 
   messages:
     build: ./messages
@@ -17,10 +25,78 @@ services:
       - "8001:8000"
     env_file:
       - ./messages/.env
+    networks:
+      - hazelcast-net
 
-  logging:
+  logging1:
     build: ./logging
     ports:
       - "8002:8000"
     env_file:
       - ./logging/.env
+    networks:
+      - hazelcast-net
+  
+  logging2:
+    build: ./logging
+    ports:
+      - "8003:8000"
+    env_file:
+      - ./logging/.env
+    networks:
+      - hazelcast-net
+
+  logging3:
+    build: ./logging
+    ports:
+      - "8004:8000"
+    env_file:
+      - ./logging/.env
+    networks:
+      - hazelcast-net
+  
+  hazelcast-node-1:
+    image: hazelcast/hazelcast
+    container_name: lab-node-1
+    environment:
+      - HZ_CLUSTERNAME=lab-micro-hazelcast
+    ports:
+      - "5701:5701"
+    networks:
+      - hazelcast-net
+  
+  hazelcast-node-2:
+    image: hazelcast/hazelcast
+    container_name: lab-node-2
+    environment:
+      - HZ_CLUSTERNAME=lab-micro-hazelcast
+    ports:
+      - "5702:5701"
+    networks:
+      - hazelcast-net
+
+  hazelcast-node-3:
+    image: hazelcast/hazelcast
+    container_name: lab-node-3
+    environment:
+      - HZ_CLUSTERNAME=lab-micro-hazelcast
+    ports:
+      - "5703:5701"
+    networks:
+      - hazelcast-net
+
+  hazelcast-management-center:
+    image: hazelcast/management-center
+    container_name: hazelcast-management-center
+    environment:
+      - MC_CLUSTER_MEMBERS=hazelcast-node-1:5701,hazelcast-node-2:5701,hazelcast-node-3:5701
+      - HZ_CLUSTERNAME=lab-micro-hazelcast
+    ports:
+      - "8080:8080"
+    networks:
+      - hazelcast-net
+
+networks:
+  hazelcast-net:
+    name: hazelcast-network
+    driver: bridge
