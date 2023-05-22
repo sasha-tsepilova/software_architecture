@@ -1,10 +1,24 @@
 import requests
 import os
 import random
+from kafka import KafkaProducer, errors
+from kafka import KafkaAdminClient
+from kafka.admin import NewPartitions
 
 global uuid_counter
 uuid_counter = 1
-logging_ms = ['LOGGING1_MICROSERVICE', 'LOGGING2_MICROSERVICE', 'LOGGING3_MICROSERVICE']
+logging_ms = ['LOGGING1_MICROSERVICE', 'LOGGING2_MICROSERVICE']
+messaging_ms = ['MESSAGE1_MICROSERVICE', 'MESSAGE2_MICROSERVICE', 'MESSAGE3_MICROSERVICE']
+producer = KafkaProducer(
+    bootstrap_servers=os.environ["KAFKA_INSTANCE"]
+)
+
+
+admin_client = KafkaAdminClient(bootstrap_servers=os.environ["KAFKA_INSTANCE"])
+topic_partitions = {}
+topic_partitions[os.environ["KAFKA_TOPIC"]] = NewPartitions(total_count=2)
+admin_client.create_partitions(topic_partitions)
+
 
 def get_all_messages():
     ms = random.choice(logging_ms)
@@ -16,7 +30,15 @@ def get_all_messages():
         except:
             ms = random.choice(logging_ms)
     
-    messages = requests.get(os.environ['MESSAGE_MICROSERVICE']).text[1:-1]
+    ms = random.choice(messaging_ms)
+    got = False
+    while not got:
+        try:
+            messages = requests.get(os.environ[ms]).text[1:-1]
+            got = True
+        except:
+            ms = random.choice(messaging_ms)
+
     result = logging + messages
     return result
 
@@ -25,11 +47,25 @@ def record_message(message:str):
     ms = random.choice(logging_ms)
     sent = False
     while not sent:
+        print(ms)
         try:
             response = requests.post(os.environ[ms], json = {"uuid": uuid_counter, "message":message})
             sent = True
         except:
             ms = random.choice(logging_ms)
+    print("BEFORE_PRODUCER")
+    future = producer.send(
+        os.environ["KAFKA_TOPIC"],
+        str.encode(message)
+    )
+    print("AFTER_PRODUCER")
+
+    try:
+        record_metadata = future.get(timeout=10)
+        print(record_metadata)
+    except errors.KafkaError as err:
+        print(err)
+        pass
     
         
     uuid_counter += 1

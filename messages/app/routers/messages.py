@@ -1,8 +1,8 @@
 from fastapi import APIRouter
-from ..services.messages import get_message
+from ..services.messages import get_logs
 
 router = APIRouter()
 
 @router.get('/')
-def message():
-    return get_message()
+async def message():
+    return await get_logs()
