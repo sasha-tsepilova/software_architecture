@@ -7,8 +7,8 @@ from kafka.admin import NewPartitions
 
 global uuid_counter
 uuid_counter = 1
-logging_ms = ['LOGGING1_MICROSERVICE', 'LOGGING2_MICROSERVICE']
-messaging_ms = ['MESSAGE1_MICROSERVICE', 'MESSAGE2_MICROSERVICE', 'MESSAGE3_MICROSERVICE']
+logging_ms = ['LOGGING1_MICROSERVICE', 'LOGGING2_MICROSERVICE', 'LOGGING3_MICROSERVICE']
+messaging_ms = ['MESSAGE1_MICROSERVICE', 'MESSAGE2_MICROSERVICE']
 producer = KafkaProducer(
     bootstrap_servers=os.environ["KAFKA_INSTANCE"]
 )
@@ -17,7 +17,10 @@ producer = KafkaProducer(
 admin_client = KafkaAdminClient(bootstrap_servers=os.environ["KAFKA_INSTANCE"])
 topic_partitions = {}
 topic_partitions[os.environ["KAFKA_TOPIC"]] = NewPartitions(total_count=2)
-admin_client.create_partitions(topic_partitions)
+try:
+    admin_client.create_partitions(topic_partitions)
+except:
+    pass
 
 
 def get_all_messages():
@@ -39,7 +42,7 @@ def get_all_messages():
         except:
             ms = random.choice(messaging_ms)
 
-    result = logging + messages
+    result = "FROM LOGGING: " + logging + " FROM MESSAGES: " + messages
     return result
 
 def record_message(message:str):

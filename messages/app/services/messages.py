@@ -1,6 +1,3 @@
-import asyncio
-from confluent_kafka import Consumer, KafkaError, KafkaException
-import sys
 import os
 import threading
 from kafka import KafkaConsumer
@@ -8,22 +5,6 @@ import time
 
 running = True
 messages = []
-
-# def msg_process(msg):
-#     messages.append(msg)
-
-# def commit_completed(err, partitions):
-#     if err:
-#         print(str(err))
-#     else:
-#         print("Committed partition offsets: " + str(partitions))
-
-# conf = {'bootstrap.servers': os.environ['KAFKA_INSTANCE'],
-#         'group.id': "foo",
-#         'default.topic.config': {'auto.offset.reset': 'smallest'},
-#         'on_commit': commit_completed}
-
-# consumer = Consumer(conf)
 msg_consumer = KafkaConsumer(os.environ['KAFKA_TOPIC'],
                                  group_id='my-group0',
                                  bootstrap_servers=os.environ['KAFKA_INSTANCE'],
