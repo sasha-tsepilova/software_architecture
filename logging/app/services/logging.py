@@ -1,11 +1,22 @@
 from ..models.logging import Message
 import hazelcast
+from consul import Consul
 
-client = hazelcast.HazelcastClient(
-cluster_name="lab-micro-hazelcast",
-cluster_members=["hazelcast-node-1", "hazelcast-node-2", "hazelcast-node-3"]
-) 
-logging_map = client.get_map("logging-map").blocking()
+def get_config(consul: Consul, key: str):
+    _, value = consul.kv.get(key)
+    return value["Value"].decode('ascii')
+
+logging_map = None
+
+def register_for_consul(name):
+    consul_service = Consul(host='software_architecture_consul_1', port=8500)
+    consul_service.agent.service.register(name, tags=['logging'])
+    client = hazelcast.HazelcastClient(
+        cluster_name=get_config(consul_service, "hazelcast/cluster_name"),
+        cluster_members=get_config(consul_service, "hazelcast/cluster_members").split(',')
+    )
+    global logging_map
+    logging_map = client.get_map(get_config(consul_service,"hazelcast/map_name")).blocking()
 
 def return_messages():
     global logging_map

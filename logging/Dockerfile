@@ -1,3 +1,4 @@
+ARG SERVICE_PORT
 FROM python:3.7
 
 WORKDIR /src
@@ -8,4 +9,5 @@ RUN pip install -r requirements.txt
 COPY app /src/app/
 COPY main.py /src/main.py
 
+ARG SERVICE_PORT
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

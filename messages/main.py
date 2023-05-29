@@ -1,9 +1,8 @@
+
 from fastapi import FastAPI
 from app.routers import messages
-import os
-import asyncio
-# from aiokafka import AIOKafkaConsumer
 import app.services.messages as services
+import os
 
 app = FastAPI(
     title="Software Architecture Labs",
@@ -25,8 +24,10 @@ def health_check():
 
 @app.on_event("startup")
 def startup_event():
+    services.register_for_consul(os.environ['SERVICE_NAME'])
     services.consume_loop()
 
 @app.on_event("shutdown")
 def shutdown_event():
     services.stop_consumer()
+

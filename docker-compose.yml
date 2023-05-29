@@ -56,121 +56,129 @@ services:
     networks:
       - hazelcast-net
   
+  consul:
+    image: consul
+    ports:
+      - "8500:8500"
+    healthcheck:
+      test: [ "CMD", "consul", "members" ]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - hazelcast-net
+
+  init-consul:
+    image: consul
+    depends_on:
+      consul:
+        condition: service_healthy
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "            
+      consul kv put -http-addr=software_architecture_consul_1:8500 hazelcast/cluster_name "lab-micro-hazelcast" 
+      consul kv put -http-addr=software_architecture_consul_1:8500 hazelcast/cluster_members "software_architecture_hazelcast-node_3,software_architecture_hazelcast-node_2,software_architecture_hazelcast-node_1"
+      consul kv put -http-addr=software_architecture_consul_1:8500 hazelcast/map_name "logging-map"
+      consul kv put -http-addr=software_architecture_consul_1:8500 kafka/brokers "kafka:9092"
+      consul kv put -http-addr=software_architecture_consul_1:8500 kafka/topic "message"
+      consul kv put -http-addr=software_architecture_consul_1:8500 kafka/queue "kafka_queue"
+      consul kv put -http-addr=software_architecture_consul_1:8500 kafka/group "my_group"
+      "
+    networks:
+      - hazelcast-net
+  
   facade:
     build: ./facade
     ports:
       - "8000:8000"
-    env_file:
-      - ./facade/.env
     depends_on:
-      kafka:
-        condition: service_healthy
-      messages1:
-        condition: service_started
-      messages2:
-        condition: service_started
-      logging1:
-        condition: service_started
-      logging2:
-        condition: service_started
-      logging3:
-        condition: service_started
+      init-consul:
+        condition: service_completed_successfully
+      init-kafka:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - hazelcast-net
 
 
-  messages1:
-    build: ./messages
+  messages_1:
     ports:
       - "8001:8000"
-    env_file:
-      - ./messages/.env
+    build: 
+      context: ./messages
+    environment:
+      SERVICE_NAME: messages_1
     depends_on:
       kafka:
         condition: service_healthy
+      init-consul:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - hazelcast-net
 
-  messages2:
-    build: ./messages
+  messages_2:
     ports:
       - "8005:8000"
-    env_file:
-      - ./messages/.env
+    build: 
+      context: ./messages
+    environment:
+      SERVICE_NAME: messages_2
     depends_on:
       kafka:
         condition: service_healthy
+      init-consul:
+        condition: service_completed_successfully
     restart: unless-stopped
     networks:
       - hazelcast-net
 
-  logging1:
-    build: ./logging
-    ports:
-      - "8002:8000"
-    env_file:
-      - ./logging/.env
-    networks:
-      - hazelcast-net
-  
-  logging2:
-    build: ./logging
-    ports:
-      - "8003:8000"
-    env_file:
-      - ./logging/.env
-    networks:
-      - hazelcast-net
-
-  logging3:
-    build: ./logging
+  logging_1:
     ports:
       - "8004:8000"
-    env_file:
-      - ./logging/.env
-    networks:
-      - hazelcast-net
-  
-  hazelcast-node-1:
-    image: hazelcast/hazelcast
-    container_name: lab-node-1
+    build: 
+      context: ./logging
     environment:
-      - HZ_CLUSTERNAME=lab-micro-hazelcast
-    ports:
-      - "5701:5701"
-    networks:
-      - hazelcast-net
-  
-  hazelcast-node-2:
-    image: hazelcast/hazelcast
-    container_name: lab-node-2
-    environment:
-      - HZ_CLUSTERNAME=lab-micro-hazelcast
-    ports:
-      - "5702:5701"
+      SERVICE_NAME: logging_1
+    depends_on:
+      init-consul:
+        condition: service_completed_successfully
     networks:
       - hazelcast-net
 
-  hazelcast-node-3:
-    image: hazelcast/hazelcast
-    container_name: lab-node-3
-    environment:
-      - HZ_CLUSTERNAME=lab-micro-hazelcast
+  logging_2:
     ports:
-      - "5703:5701"
+      - "8003:8000"
+    build: 
+      context: ./logging
+    environment:
+      SERVICE_NAME: logging_2
+    depends_on:
+      init-consul:
+        condition: service_completed_successfully
     networks:
       - hazelcast-net
 
-  hazelcast-management-center:
-    image: hazelcast/management-center
-    container_name: hazelcast-management-center
-    environment:
-      - MC_CLUSTER_MEMBERS=hazelcast-node-1:5701,hazelcast-node-2:5701,hazelcast-node-3:5701
-      - HZ_CLUSTERNAME=lab-micro-hazelcast
+  logging_3:
     ports:
-      - "8080:8080"
+      - "8002:8000"
+    build: 
+      context: ./logging
+    environment:
+      SERVICE_NAME: logging_3
+    depends_on:
+      init-consul:
+        condition: service_completed_successfully
+    networks:
+      - hazelcast-net
+  
+  hazelcast-node:
+    image: hazelcast/hazelcast
+    environment:
+      - HZ_CLUSTERNAME=lab-micro-hazelcast
+    deploy:
+      replicas: 3
     networks:
       - hazelcast-net
 
